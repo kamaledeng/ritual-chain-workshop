@@ -22,15 +22,29 @@ export function useBounty(bountyId?: bigint) {
     },
   });
 
+  const countsQuery = useReadContract({
+    address: contractAddress,
+    abi: aiJudgeAbi,
+    functionName: "getBountyCounts",
+    args: bountyId !== undefined ? [bountyId] : undefined,
+    chainId: ritualChain.id,
+    query: {
+      enabled,
+      refetchInterval: 12_000,
+    },
+  });
+
   const bounty: Bounty | undefined = query.data
-    ? parseBounty(query.data)
+    ? parseBounty(query.data, countsQuery.data)
     : undefined;
 
   return {
     bounty,
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
+    isLoading: query.isLoading || countsQuery.isLoading,
+    isError: query.isError || countsQuery.isError,
+    error: query.error ?? countsQuery.error,
+    refetch: async () => {
+      await Promise.all([query.refetch(), countsQuery.refetch()]);
+    },
   };
 }

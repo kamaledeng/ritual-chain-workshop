@@ -25,7 +25,7 @@ export function SubmissionsList({
     <Card>
       <CardHeader
         title="Submissions"
-        subtitle="All submissions are judged together after the deadline."
+        subtitle="Only valid revealed answers appear and are judged together."
         action={<Badge tone="zinc">{count}</Badge>}
       />
       <CardBody className="space-y-3">

@@ -6,6 +6,8 @@ import aiJudgeAbi from "@/abi/AIJudge";
 import { contractAddress, executorAddress } from "@/config/contract";
 import { ritualChain } from "@/config/wagmi";
 import type { Bounty } from "@/lib/bounty";
+import { getBountyStatus } from "@/lib/bounty";
+import { useNow } from "@/hooks/useNow";
 import { buildJudgeAllLlmInput, type JudgeSubmission } from "@/lib/ritualLlm";
 import { useWriteTx } from "@/hooks/useWriteTx";
 import { useRitualWalletStatus } from "@/hooks/useRitualWalletStatus";
@@ -30,6 +32,7 @@ export function JudgeAll({
   const [gathering, setGathering] = useState(false);
   const [gatherError, setGatherError] = useState<string | null>(null);
   const tx = useWriteTx(() => onJudged());
+  const now = useNow() / 1000;
 
   // Preflight the *connected* wallet's RitualWallet funding (not the bounty
   // contract) — judgeAll spends prepaid+locked RITUAL via the LLM precompile.
@@ -38,7 +41,11 @@ export function JudgeAll({
   const count = Number(bounty.submissionCount);
 
   // Gate per spec: owner only, has submissions, not yet judged.
-  if (!isOwner || bounty.judged || bounty.finalized || count === 0) {
+  if (
+    !isOwner ||
+    getBountyStatus(bounty, now) !== "ready" ||
+    count === 0
+  ) {
     return null;
   }
 
