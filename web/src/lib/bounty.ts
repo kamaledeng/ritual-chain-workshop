@@ -1,20 +1,20 @@
 import type { Address } from "viem";
 
-/** Parsed shape of the `getBounty` tuple return value. */
 export type Bounty = {
   owner: Address;
   title: string;
   rubric: string;
   reward: bigint;
-  deadline: bigint;
+  submissionDeadline: bigint;
+  revealDeadline: bigint;
   judged: boolean;
   finalized: boolean;
+  commitmentCount: bigint;
   submissionCount: bigint;
   winnerIndex: bigint;
   aiReview: `0x${string}`;
 };
 
-/** getBounty returns a positional tuple — map it to a named object. */
 export function parseBounty(
   raw: readonly [
     Address,
@@ -22,59 +22,63 @@ export function parseBounty(
     string,
     bigint,
     bigint,
-    boolean,
-    boolean,
     bigint,
+    boolean,
+    boolean,
     bigint,
     `0x${string}`,
   ],
+  counts: readonly [bigint, bigint] = [0n, 0n],
 ): Bounty {
-  const [
-    owner,
-    title,
-    rubric,
-    reward,
-    deadline,
-    judged,
-    finalized,
-    submissionCount,
-    winnerIndex,
-    aiReview,
-  ] = raw;
   return {
-    owner,
-    title,
-    rubric,
-    reward,
-    deadline,
-    judged,
-    finalized,
-    submissionCount,
-    winnerIndex,
-    aiReview,
+    owner: raw[0],
+    title: raw[1],
+    rubric: raw[2],
+    reward: raw[3],
+    submissionDeadline: raw[4],
+    revealDeadline: raw[5],
+    judged: raw[6],
+    finalized: raw[7],
+    commitmentCount: counts[0],
+    submissionCount: counts[1],
+    winnerIndex: raw[8],
+    aiReview: raw[9],
   };
 }
 
-export type BountyStatus = "open" | "ready" | "judged" | "finalized";
+export type BountyStatus =
+  | "submission"
+  | "reveal"
+  | "ready"
+  | "judged"
+  | "finalized";
 
-export function getBountyStatus(b: Bounty, nowSeconds = Date.now() / 1000): BountyStatus {
-  if (b.finalized) return "finalized";
-  if (b.judged) return "judged";
-  const deadlinePassed = Number(b.deadline) <= nowSeconds;
-  return deadlinePassed ? "ready" : "open";
+export function getBountyStatus(
+  bounty: Bounty,
+  nowSeconds = Date.now() / 1000,
+): BountyStatus {
+  if (bounty.finalized) return "finalized";
+  if (bounty.judged) return "judged";
+  if (nowSeconds >= Number(bounty.revealDeadline)) return "ready";
+  if (nowSeconds >= Number(bounty.submissionDeadline)) return "reveal";
+  return "submission";
 }
 
 export const STATUS_META: Record<
   BountyStatus,
   { label: string; tone: "green" | "amber" | "indigo" | "zinc" }
 > = {
-  open: { label: "Open", tone: "green" },
+  submission: { label: "Commit phase", tone: "green" },
+  reveal: { label: "Reveal phase", tone: "amber" },
   ready: { label: "Ready for judging", tone: "amber" },
   judged: { label: "Judged", tone: "indigo" },
   finalized: { label: "Finalized", tone: "zinc" },
 };
 
-/** Can a participant still submit an answer? */
-export function canSubmit(b: Bounty, nowSeconds = Date.now() / 1000): boolean {
-  return !b.judged && !b.finalized && Number(b.deadline) > nowSeconds;
+export function canCommit(bounty: Bounty, nowSeconds = Date.now() / 1000): boolean {
+  return getBountyStatus(bounty, nowSeconds) === "submission";
+}
+
+export function canReveal(bounty: Bounty, nowSeconds = Date.now() / 1000): boolean {
+  return getBountyStatus(bounty, nowSeconds) === "reveal";
 }
