@@ -2,6 +2,14 @@
 
 This workshop project implements the required commit-reveal track for a fair AI-assisted bounty. Participants publish only a commitment hash during the submission phase, reveal the answer and salt in a later phase, and only valid reveals are included in one batched Ritual LLM review. The AI recommends a ranking; the bounty owner remains responsible for the final winner and reward payment.
 
+## Verified Ritual Deployment
+
+- Contract: [`0xC44C796526C7AC2ce4a7Eb69C7c926e782Bcf4B1`](https://explorer.ritualfoundation.org/address/0xC44C796526C7AC2ce4a7Eb69C7c926e782Bcf4B1)
+- Deployment transaction: [`0xc75453d53dbaf8d6239d037ea6a6e120bf5a6564d8944bee528a29de8cfe4f84`](https://explorer.ritualfoundation.org/tx/0xc75453d53dbaf8d6239d037ea6a6e120bf5a6564d8944bee528a29de8cfe4f84)
+- Network: Ritual Chain `1979`
+- Block: `37174388`
+- RPC verification: successful receipt and non-empty runtime bytecode
+
 ## Architecture
 
 - `hardhat/contracts/AIJudge.sol` owns bounty funds, deadlines, commitments, reveal verification, batched LLM judging, and winner finalization.
@@ -92,6 +100,6 @@ The bounty title, rubric, deadlines, commitment hashes, wallet addresses, reveal
 After deployment, submit:
 
 - GitHub fork: `https://github.com/kamaledeng/ritual-chain-workshop`
-- Deployed contract address: the `AIJudge` address printed by Ignition
-- Deployment transaction hash: the successful creation transaction shown in the Ignition journal or Ritual explorer
+- Deployed contract address: `0xC44C796526C7AC2ce4a7Eb69C7c926e782Bcf4B1`
+- Deployment transaction hash: `0xc75453d53dbaf8d6239d037ea6a6e120bf5a6564d8944bee528a29de8cfe4f84`
 - Struggle note: “The most challenging step was aligning the browser-generated ABI-encoded commitment with Solidity while enforcing separate submission and reveal deadlines. I addressed it with deterministic cross-layer hash tests and boundary-case contract tests.”

@@ -10,6 +10,9 @@
 # Hardhat Build Artifacts
 /artifacts
 
+# Local Ignition deployment journals and generated artifacts
+/ignition/deployments
+
 # Hardhat compilation (v2) support directory
 /cache
 
