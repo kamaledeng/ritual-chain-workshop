@@ -26,7 +26,7 @@
 
 **Interfaces:**
 - Produces: `createBounty(string,string,uint256,uint256)`, `submitCommitment(uint256,bytes32)`, `revealAnswer(uint256,string,bytes32)`, `judgeAll(uint256,bytes)`, and `finalizeWinner(uint256,uint256)`.
-- Produces: `getCommitment(uint256,address)` and a `getBounty` tuple containing both deadlines, commitment count, and reveal count.
+- Produces: `getCommitment(uint256,address)`, a `getBounty` tuple containing both deadlines, and `getBountyCounts(uint256)` for commitment/reveal counts. Counts are split out to keep Solidity 0.8.24 below its stack limit without requiring `viaIR`.
 
 - [ ] **Step 1: Write failing lifecycle tests**
 
