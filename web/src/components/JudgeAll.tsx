@@ -50,7 +50,7 @@ export function JudgeAll({
   }
 
   async function handleJudge() {
-    if (!publicClient || !contractAddress || !walletStatus.ready) return;
+    if (!publicClient || !contractAddress || !executorAddress || !walletStatus.ready) return;
     setGatherError(null);
     setGathering(true);
     try {
@@ -96,6 +96,7 @@ export function JudgeAll({
 
   const busy = gathering || tx.isBusy;
   const fundingReady = walletStatus.ready === true;
+  const executorReady = Boolean(executorAddress);
 
   return (
     <Card>
@@ -106,15 +107,21 @@ export function JudgeAll({
       <CardBody className="space-y-3">
         <Notice tone="indigo">AI review is advisory. The bounty owner finalizes the winner.</Notice>
 
+        {!executorReady && (
+          <Notice tone="amber">Set NEXT_PUBLIC_RITUAL_EXECUTOR_ADDRESS to a valid LLM executor from the Ritual registry.</Notice>
+        )}
+
         <RitualWalletPanel status={walletStatus} onDeposited={walletStatus.refetch} />
 
-        <Button onClick={handleJudge} disabled={busy || !fundingReady} className="w-full">
+        <Button onClick={handleJudge} disabled={busy || !fundingReady || !executorReady} className="w-full">
           {gathering ? (
             <>
               <Spinner /> Gathering {count} submissions…
             </>
           ) : tx.isBusy ? (
             "Judging…"
+          ) : !executorReady ? (
+            "Configure LLM executor"
           ) : !fundingReady ? (
             "Fund RitualWallet to judge"
           ) : (

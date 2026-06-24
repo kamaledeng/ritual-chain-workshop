@@ -1,4 +1,4 @@
-import { encodeAbiParameters, parseAbiParameters, stringToHex, type Address } from "viem";
+import { encodeAbiParameters, parseAbiParameters, type Address } from "viem";
 
 /**
  * ============================================================================
@@ -11,27 +11,17 @@ import { encodeAbiParameters, parseAbiParameters, stringToHex, type Address } fr
  * the signed result. `judgeAll(bountyId, llmInput)` forwards the `llmInput`
  * bytes we build here to that precompile.
  *
- * ⚠️ TODO(ritual-abi): The exact ABI layout the LLM precompile expects is not
- * yet publicly pinned down. The `"abi"` encoding below is a *best-effort*
- * struct layout. Keep this file isolated so that, once the real ABI is
- * published, only `RITUAL_LLM_REQUEST_PARAMS` / `encodeRequest` need to change.
- *
- * For local UI development you can flip `ENCODING` to `"json"` to get a simple,
- * inspectable UTF-8 JSON payload (a safe mocked fallback that still produces
- * valid `bytes`), so the whole create → submit → judge → finalize flow works
- * end-to-end against a contract that just stores/echoes the bytes.
+ * The request uses Ritual's canonical 30-field LLM ABI and the currently live
+ * GLM model. A unit test decodes the output again to prevent field drift.
  */
 
 /** Ritual LLM precompile address (per Ritual docs). */
 export const RITUAL_LLM_PRECOMPILE: Address = "0x0000000000000000000000000000000000000802";
 
-/** Switch between the best-effort ABI layout and a mocked JSON payload. */
-const ENCODING: "abi" | "json" = "abi";
-
 /** Model + sampling config. Low temperature keeps judging stable. */
-export const JUDGE_MODEL = "gpt-4o-mini";
-export const JUDGE_TEMPERATURE = 0.1;
-export const JUDGE_MAX_TOKENS = 1024;
+export const JUDGE_MODEL = "zai-org/GLM-4.7-FP8";
+export const JUDGE_TEMPERATURE = 100n;
+export const JUDGE_MAX_TOKENS = 8192n;
 export type JudgeSubmission = {
   index: number;
   submitter: string;
@@ -92,7 +82,7 @@ Submissions:
 ${submissionsJson}`;
 }
 
-// Best-effort tuple layout for the LLM precompile request.
+// Canonical 30-field tuple layout for the LLM precompile request.
 const llmParams = parseAbiParameters(
   "address, bytes[], uint256, bytes[], bytes, string, string, int256, string, bool, int256, string, string, uint256, bool, int256, string, bytes, int256, string, string, bool, int256, bytes, bytes, int256, int256, string, bool, (string,string,string)",
 );
@@ -127,20 +117,6 @@ export function buildJudgeAllLlmInput({
     },
   ]);
 
-  if (ENCODING === "json") {
-    // Mocked fallback: UTF-8 JSON payload. Easy to inspect and decode, and a
-    // contract that just stores the bytes will round-trip it fine.
-    return stringToHex(
-      JSON.stringify({
-        executor: executorAddress,
-        model: JUDGE_MODEL,
-        temperature: JUDGE_TEMPERATURE,
-        maxTokens: JUDGE_MAX_TOKENS,
-        prompt,
-      }),
-    );
-  }
-
   return encodeAbiParameters(llmParams, [
     executorAddress,
     [], // encryptedSecrets
@@ -148,29 +124,29 @@ export function buildJudgeAllLlmInput({
     [], // secretSignatures
     "0x", // userPublicKey
     messages,
-    "zai-org/GLM-4.7-FP8",
+    JUDGE_MODEL,
     0n, // frequencyPenalty
     "", // logitBiasJson
     false, // logprobs
-    8192n, // maxCompletionTokens
+    JUDGE_MAX_TOKENS, // maxCompletionTokens
     "", // metadataJson
     "", // modalitiesJson
     1n, // n
-    false, // parallelToolCalls
+    true, // parallelToolCalls
     0n, // presencePenalty
     "low", // reasoningEffort
     "0x", // responseFormatData
     -1n, // seed
-    "", // serviceTier
+    "auto", // serviceTier
     "", // stopJson
     false, // stream
-    100n, // temperature: 0.2 × 1000, lower = more stable judging
+    JUDGE_TEMPERATURE, // temperature: 0.1 × 1000
     "0x", // toolChoiceData
     "0x", // toolsData
     -1n, // topLogprobs
     1000n, // topP
     "", // user
     false, // piiEnabled
-    ["", ``, ""], // convoHistory
+    ["", "", ""], // convoHistory: empty StorageRef, no persisted history
   ]);
 }

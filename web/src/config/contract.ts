@@ -20,10 +20,12 @@ export const contractAddress: Address | undefined =
 /** True when the contract address env var is present and well-formed. */
 export const isContractConfigured = Boolean(contractAddress);
 
-/** Ritual LLM executor / callback address used when encoding `judgeAll` input. */
-export const executorAddress: Address =
-  (process.env.NEXT_PUBLIC_RITUAL_EXECUTOR_ADDRESS?.trim() as Address | undefined) ??
-  "0x0000000000000000000000000000000000000802";
+/** Registered Ritual LLM TEE executor used when encoding `judgeAll` input. */
+const rawExecutor = process.env.NEXT_PUBLIC_RITUAL_EXECUTOR_ADDRESS?.trim();
+export const executorAddress: Address | undefined =
+  rawExecutor && /^0x[0-9a-fA-F]{40}$/.test(rawExecutor)
+    ? (rawExecutor as Address)
+    : undefined;
 
 export const ritualChainId = Number(
   process.env.NEXT_PUBLIC_RITUAL_CHAIN_ID ?? "1979",
